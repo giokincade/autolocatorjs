@@ -1,0 +1,3 @@
+#! /bin/bash
+
+BOARD_PORT=$(espruino --list | grep usbmodem | awk '{print $1}' | head -1)
