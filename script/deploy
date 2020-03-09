@@ -1,0 +1,8 @@
+#! /bin/bash
+set -x
+set -e
+source script/env
+
+echo $BOARD_PORT
+
+espruino --port $BOARD_PORT --watch src/test.js
