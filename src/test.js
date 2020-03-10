@@ -21,7 +21,7 @@ const connectToWifi = () => {
 };
 
 var page = '<html><body><script>var ws;setTimeout(function(){';
-page += 'ws = new WebSocket("ws://" + location.host + "/my_websocket", "protocolOne");';
+page += 'ws = new WebSocket("ws://" + location.host);';
 page += 'ws.onmessage = function (event) { console.log("MSG:"+event.data); };';
 page += 'setTimeout(function() { ws.send("Hello to Espruino!"); }, 1000);';
 page += '},1000);</script></body></html>';
