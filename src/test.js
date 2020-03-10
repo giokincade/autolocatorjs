@@ -1,5 +1,5 @@
 const wifi = require("Wifi");
-const http = require("http");
+const ws = require("ws");
 
 const WIFI_NAME = "FiOS-52W4I";
 const WIFI_OPTIONS = { password : "fund9388ion9279net" };
@@ -20,16 +20,30 @@ const connectToWifi = () => {
 	});
 };
 
+var page = '<html><body><script>var ws;setTimeout(function(){';
+page += 'ws = new WebSocket("ws://" + location.host + "/my_websocket", "protocolOne");';
+page += 'ws.onmessage = function (event) { console.log("MSG:"+event.data); };';
+page += 'setTimeout(function() { ws.send("Hello to Espruino!"); }, 1000);';
+page += '},1000);</script></body></html>';
+
 const onHttpRequest = (request, response) => {
     console.log("Processing request");
     response.writeHead(200, { 'Content-Type': 'text/html' });
-    response.write("<html><body>Boom</body></html>");
-    response.end("</body></html>");
+    response.end(page);
 };
 
 const startServer = () => {
     console.log("Starting Server");
-    http.createServer(onHttpRequest).listen(80);
+    ws
+        .createServer(onHttpRequest)
+        .listen(80)
+        .on("websocket", (socket) => {
+            socket.on("message", (msg) => {
+                console.log("websocket message: " + msg);
+                socket.send("pong");
+            })
+        });
+
 };
 
 function onInit() {
