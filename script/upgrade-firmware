@@ -1,6 +1,7 @@
 #! /bin/bash
-#! /bin/bash
-source env
+set -x
+set -e
+source script/env
 
 curl "https://www.espruino.com/binaries/espruino_2v04_wifi.bin" -o firmware.bin
 espruino --port $BOARD_PORT -f firmware.bin
