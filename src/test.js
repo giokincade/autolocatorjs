@@ -1,6 +1,5 @@
 const wifi = require("Wifi");
 const ws = require("ws");
-const test = require("./module_test")
 
 const WIFI_NAME = "FiOS-52W4I";
 const WIFI_OPTIONS = { password : "fund9388ion9279net" };
@@ -11,12 +10,13 @@ const connectToWifi = () => {
 		  return;
 		} else {
 			console.log("Wifi Connected!");
-			wifi.getIP((err, info) => {
-				if (info && info.ip) {
-					console.log("IP Address: " + info.ip );
+            wifi.setHostname(
+                "mattwalsh",
+                () => {
+                    console.log("Hostname set");
                     startServer();
-				}
-			});
+                }
+            );
 		}
 	});
 };
