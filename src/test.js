@@ -1,6 +1,5 @@
 const wifi = require("Wifi");
 const ws = require("ws");
-const test = require("./module_test")
 
 const WIFI_NAME = "FiOS-52W4I";
 const WIFI_OPTIONS = { password : "fund9388ion9279net" };
