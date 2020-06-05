@@ -14,7 +14,7 @@ Make sure to put the board in firmware flashing mode (hold the button while plug
 ```
 
 # Deploy
-This deploys `src/test.js` and gives you a REPL. The wifi credentials are hard-coded. 
+This deploys `src/test.js` and gives you a REPL. It will take some time for the deploy to complete and for it to connect to the wifi. The Wifi credentials are currently hard-coded.
 
 ```
 ./script/deploy
