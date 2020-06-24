@@ -1,6 +1,6 @@
 {
  "info": {
-  "binary_version": "2v04", 
+  "binary_version": "2v05", 
   "variables": 7148, 
   "link": [
    "http://www.espruino.com/EspruinoWiFi"

@@ -5,4 +5,4 @@ source script/env
 
 echo $BOARD_PORT
 
-espruino --port $BOARD_PORT --board board.json --watch src/test.js
+espruino --port $BOARD_PORT --board board.json --watch src/mw-test.js
