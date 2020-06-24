@@ -16,17 +16,14 @@ const connectToWifi = () => {
 			};
 			
 			wifi.setIP(info, wifi.getIP((err) => {
-				 startServer();
+				console.log("Allegedly set IP...");
+				startServer();
 			}));
 		}
 	});
 };
 
-var page = '<html><body><script>var ws;setTimeout(function(){';
-page += 'const ws = new WebSocket("ws://" + location.host);';
-page += 'ws.onmessage = function (event) { console.log("MSG:"+event.data); };';
-page += 'setTimeout(function() { ws.send("Hello to Espruino!"); }, 1000);';
-page += '</script><p>something</p></body></html>';
+var page = 'allo guv';
 
 const onHttpRequest = (request, response) => {
 	console.log("Processing request");
