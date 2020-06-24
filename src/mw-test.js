@@ -15,7 +15,9 @@ const connectToWifi = () => {
 				ip: "192.168.1.9"
 			};
 			
-			wifi.setIP(info, wifi.getIP((err) => {}));
+			wifi.setIP(info, wifi.getIP((err) => {
+				 startServer();
+			}));
 		}
 	});
 };
