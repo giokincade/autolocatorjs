@@ -16,7 +16,7 @@ const connectToWifi = () => {
 			};
 			
 			wifi.setIP(info, wifi.getIP((err) => {
-				console.log("Allegedly set IP...");
+				console.log("IP set!");
 				startServer();
 			}));
 		}
