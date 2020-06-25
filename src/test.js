@@ -1,8 +1,8 @@
 const wifi = require("Wifi");
 const ws = require("ws");
 
-const WIFI_NAME = "FiOS-52W4I";
-const WIFI_OPTIONS = { password : "fund9388ion9279net" };
+const WIFI_NAME = "MeowNetJr";
+const WIFI_OPTIONS = { password : "cookiejr" };
 const connectToWifi = () => {
 	wifi.connect(WIFI_NAME, WIFI_OPTIONS, (err)  => {
 		if (err) {
