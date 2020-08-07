@@ -2,8 +2,8 @@ const wifi = require("Wifi");
 const ws = require("ws");
 
 const PINS = {
-    TACK: A0,
-    TACK_DIRECTION: A1,
+    TACH: A0,
+    TACH_DIRECTION: A1,
     PLAY: A4
 };
 const WIFI_NAME = "OceanusStudio";
@@ -11,17 +11,17 @@ const WIFI_OPTIONS = { password : "studio125" };
 
 
 pinMode(
-  PINS.TACK,
+  PINS.TACH,
   'input_pullup'
 );
 pinMode(
-  PINS.TACK_DIRECTION,
+  PINS.TACH_DIRECTION,
   'input_pullup'
 );
 
-const tackWatcher = E.compiledC(`
+const tachWatcher = E.compiledC(`
 //void handlePulse()
-//int getTack()
+//int getTach()
 //void handleDirection()
 
 volatile int pulsesFromStart = 0;
@@ -40,24 +40,25 @@ void handleDirection(bool state) {
 }
 
 
-int getTack() {
+int getTach() {
     return pulsesFromStart;
 }
 `);
 
 const getTime = () => {
-  const secondsRaw = tackWatcher.getTack() / 4800.0;
+  const secondsRaw = tachWatcher.getTach() / 4800.0;
   const minutes = Math.floor(secondsRaw / 60);
   const seconds = secondsRaw - minutes * 60.0;
   return minutes + ":" + seconds;
 };
-setWatch(tackWatcher.handlePulse, PINS.TACK, {repeat:true, edge:"rising", irq:true});
 
-setWatch(tackWatcher.handleDirection, PINS.TACK_DIRECTION, {repeat:true, edge:"both", irq:true});
+setWatch(tachWatcher.handlePulse, PINS.TACH, {repeat:true, edge:"rising", irq:true});
+
+setWatch(tachWatcher.handleDirection, PINS.TACH_DIRECTION, {repeat:true, edge:"both", irq:true});
 
 setInterval(
     () => {
-        console.log("Tack = " + tackWatcher.getTack());
+        console.log("Tach = " + tachWatcher.getTach());
         console.log("Time = " + getTime());
     },
     1000
