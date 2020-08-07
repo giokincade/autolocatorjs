@@ -44,8 +44,13 @@ int getTack() {
     return pulsesFromStart;
 }
 `);
-console.log(tackWatcher);
 
+const getTime = () => {
+  const secondsRaw = tackWatcher.getTack() / 4800.0;
+  const minutes = Math.floor(secondsRaw / 60);
+  const seconds = secondsRaw - minutes * 60.0;
+  return minutes + ":" + seconds;
+};
 setWatch(tackWatcher.handlePulse, PINS.TACK, {repeat:true, edge:"rising", irq:true});
 
 setWatch(tackWatcher.handleDirection, PINS.TACK_DIRECTION, {repeat:true, edge:"both", irq:true});
@@ -53,6 +58,7 @@ setWatch(tackWatcher.handleDirection, PINS.TACK_DIRECTION, {repeat:true, edge:"b
 setInterval(
     () => {
         console.log("Tack = " + tackWatcher.getTack());
+        console.log("Time = " + getTime());
     },
     1000
 );
