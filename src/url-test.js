@@ -27,11 +27,18 @@ const connectToWifi = () => {
 };
 
 const getPage = () => {
-	var html = '<html><head><title>Autolocator</title></head><body>';
-	html += "<script>request=new XMLHttpRequest();request.open('GET', 'http://autolocator.oceanus.nyc/index.html', true);request.send(null);request.onreadystatechange=function (){if (request.readyState===4 && request.status===200){document.body.innerHTML=request.responseText;}}; </script>";
-	html += "</body></html>";
-
-	return html;
+		// read text from URL location
+	var request = new XMLHttpRequest();
+	request.open('GET', 'http://autolocator.oceanus.nyc/index.html', true);
+	request.send(null);
+	request.onreadystatechange = function () {
+		if (request.readyState === 4 && request.status === 200) {
+			var type = request.getResponseHeader('Content-Type');
+			if (type.indexOf("text") !== 1) {
+				return request.responseText;
+			}
+		}
+	};
 };
 
 const onHttpRequest = (request, response) => {
@@ -55,10 +62,11 @@ const startServer = () => {
 
 };
 
-function onInit() 
-{
+function onInit() {
+	var today = new Date();
+	time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+
 	connectToWifi();
 }
 
-//remove on "save();" command in IDE
 onInit();

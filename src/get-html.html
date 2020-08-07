@@ -1,0 +1,22 @@
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+	<title>Autolocator</title>
+</head>
+<body>
+  <script>
+		// read text from URL location
+	var request = new XMLHttpRequest();
+	request.open('GET', 'http://autolocator.oceanus.nyc/index.html', true);
+	request.send(null);
+	request.onreadystatechange = function () {
+		if (request.readyState === 4 && request.status === 200) 
+		{
+			document.body.innerHTML = request.responseText;
+		}
+	};
+  </script>
+
+</body>
+</html>
+
+
