@@ -1,3 +1,4 @@
 #! /bin/bash
 
-BOARD_PORT=$(espruino --list | grep usbmodem | awk '{print $1}' | head -1)
+#BOARD_PORT=$(espruino --list | grep usbmodem | awk '{print $1}' | head -1)
+BOARD_PORT=$(ls /dev | grep usbmodem | grep tty | awk '{print "/dev/" $NF}' | head -1)
