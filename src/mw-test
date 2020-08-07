@@ -84,12 +84,10 @@ const connectToWifi = () => {
 	});
 };
 
-var page = 'allo guv';
-
 const onHttpRequest = (request, response) => {
 	console.log("Processing request");
 	response.writeHead(200, { 'Content-Type': 'text/html' });
-	response.end(page);
+	response.end(getTime());
 };
 
 const startServer = () => {
