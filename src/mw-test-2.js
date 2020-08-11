@@ -52,24 +52,35 @@ const getTime = () => {
   return minutes + ":" + seconds;
 };
 
-setWatch(tachWatcher.handlePulse, PINS.TACH, {repeat:true, edge:"rising", irq:true});
 
-setWatch(tachWatcher.handleDirection, PINS.TACH_DIRECTION, {repeat:true, edge:"both", irq:true});
+const attachInterupts = () => {
+  setWatch(
+    tachWatcher.handlePulse, 
+    PINS.TACH, 
+    {repeat:true, edge:"rising", irq:true}
+  );
+
+  setWatch(
+    tachWatcher.handleDirection, 
+    PINS.TACH_DIRECTION, 
+    {repeat:true, edge:"both", irq:true}
+  );
+};
 
 setInterval(
     () => {
-        console.log("Tach = " + tachWatcher.getTach());
-        console.log("Time = " + getTime());
+        log("Tach = " + tachWatcher.getTach());
+        log("Time = " + getTime());
     },
     1000
 );
 const connectToWifi = () => {
 	wifi.connect(WIFI_NAME, WIFI_OPTIONS, (err)  => {
 		if (err) {
-		  console.log("Connection error: " + err);
+		  log("Connection error: " + err);
 		  return;
 		} else {
-			console.log("Wifi Connected!");
+			log("Wifi Connected!");
 
 			var info = {
 					ip: "192.168.0.159",
@@ -78,7 +89,7 @@ const connectToWifi = () => {
 			};
 
 			wifi.setIP(info, (err) => {
-					console.log("IP set!");
+					log("IP set!");
 					startServer();
 			});
 		}
@@ -86,27 +97,36 @@ const connectToWifi = () => {
 };
 
 const onHttpRequest = (request, response) => {
-	console.log("Processing request");
+	log("Processing request");
 	response.writeHead(200, { 'Content-Type': 'text/html' });
 	response.end(getTime());
 };
 
 const startServer = () => {
-	console.log("Starting Server");
+	log("Starting Server");
 	ws
 		.createServer(onHttpRequest)
 		.listen(80)
 		.on("websocket", (socket) => {
-			console.log("websocket connection");
+			log("websocket connection");
 			socket.on("message", (msg) => {
-				console.log("websocket message: " + msg);
+				log("websocket message: " + msg);
 				socket.send("pong");
-			})
+			});
 		});
 
 };
 
+function log(msg) {
+	if(debug)
+	{
+		console.log(msg);
+	}
+}
+
 function onInit() {
 	connectToWifi();
+    attachInterupts();
 }
-onInit();
+
+var debug = true;
