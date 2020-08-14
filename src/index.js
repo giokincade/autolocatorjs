@@ -97,6 +97,9 @@ class Transport {
 
     fastforward() {
     }
+
+    init() {
+    }
 }
 
 const getState = () => {
@@ -133,18 +136,23 @@ const attachInterupts = () => {
   }
 };
 
-const getIndexPage = (responseStream) => {
-    http.get('http://autolocator.oceanus.nyc/index.html', (cloudResponse) => {
-        var contents = "";
-        cloudResponse.on("data", (data) => {
-            contents += data;
-        });
-        cloudResponse.on("close", () => {
-            responseStream.end(contents);
-        });
-    });
-};
-
+const INDEX =`
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width,initial-scale=1"/>
+        <meta name="theme-color" content="#000000"/>
+        <meta name="description" content="Autolocator Interface"/>
+        <title>Autolocator</title>
+    </head>
+    <body>
+        <noscript>You need to enable JavaScript to run this app.</noscript>
+        <div id="root"></div>
+        <script src="http://autolocator.oceanus.nyc/autolocator-build.js"></script>
+    </body>
+</html>
+`;
 
 
 const connectToWifi = () => {
@@ -188,7 +196,7 @@ const onSocketConnection = (socket) => {
 const onHttpRequest = (request, response) => {
 	log("processing http request");
 	response.writeHead(200, { 'Content-Type': 'text/html' });
-	getIndexPage(response);
+	response.end(INDEX);
 };
 
 const startServer = () => {
