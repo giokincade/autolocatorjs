@@ -1,5 +1,6 @@
 const wifi = require("Wifi");
 const ws = require("ws");
+const http = require("http");
 
 const PINS = {
     TACH: A0,
@@ -84,6 +85,20 @@ class Clock {
 };
 const CLOCK = new Clock(tachWatcher);
 
+class Transport {
+    play() {
+    }
+
+    stop() {
+    }
+
+    rewind() {
+    }
+
+    fastforward() {
+    }
+}
+
 const getState = () => {
     return  {
         clock: {
@@ -117,6 +132,20 @@ const attachInterupts = () => {
     );
   }
 };
+
+const getIndexPage = (responseStream) => {
+    http.get('http://autolocator.oceanus.nyc/index.html', (cloudResponse) => {
+        var contents = "";
+        cloudResponse.on("data", (data) => {
+            contents += data;
+        });
+        cloudResponse.on("close", () => {
+            responseStream.end(contents);
+        });
+    });
+};
+
+
 
 const connectToWifi = () => {
 	wifi.connect(WIFI_NAME, WIFI_OPTIONS, (err)  => {
@@ -159,7 +188,7 @@ const onSocketConnection = (socket) => {
 const onHttpRequest = (request, response) => {
 	log("processing http request");
 	response.writeHead(200, { 'Content-Type': 'text/html' });
-	response.end(JSON.stringify(getState()));
+	getIndexPage(response);
 };
 
 const startServer = () => {
@@ -170,8 +199,12 @@ const startServer = () => {
 		.on("websocket", onSocketConnection);
 };
 
+var initialized = false;
 function onInit() {
-	connectToWifi();
+    connectToWifi();
     attachInterupts();
+    initialized = true;
 }
-onInit();
+if (!initialized) {
+    onInit();
+}
