@@ -63,9 +63,13 @@ const tachWatcher = (function(){
 })();
 
 class Clock {
-    constructor(tachWatcher, rotationsPerSecond = 4800.0) {
+    constructor(tachWatcher, rotationsPerSecond) {
         this.tachWatcher = tachWatcher;
-        this.rotationsPerSecond = 4800;
+        this.rotationsPerSecond = rotationsPerSecond || 4800;
+    }
+
+    get pulsesFromStart() {
+        return this.tachWatcher.getTach();
     }
 
     get seconds() {
@@ -73,16 +77,17 @@ class Clock {
     }
 
     get time() {
-      const minutes = Math.floor(secondsRaw / 60);
-      const seconds = secondsRaw - minutes * 60.0;
+      const minutes = Math.floor(this.seconds / 60);
+      const seconds = this.seconds - minutes * 60.0;
       return minutes + ":" + seconds;
     }
 };
-const CLOCK = Clock(tachWatcher);
+const CLOCK = new Clock(tachWatcher);
 
 const getState = () => {
     return  {
         clock: {
+            pulses: CLOCK.pulsesFromStart,
             seconds: CLOCK.seconds,
             time: CLOCK.time
         }
@@ -106,10 +111,9 @@ const attachInterupts = () => {
   if (DEBUG) {
     setInterval(
       () => {
-        log("Tach = " + tachWatcher.getTach());
-        log("Time = " + CLOCK.time);
+        log("STATE = " + JSON.stringify(getState()));
       },
-      1000
+      2000
     );
   }
 };
@@ -123,7 +127,7 @@ const connectToWifi = () => {
 			log("Wifi Connected!");
 
 			var info = {
-					ip: "192.168.1.200",
+					ip: "192.168.0.201",
                     gw: "192.168.0.1",
                     netmask: "255.255.255.0"
 			};
@@ -136,26 +140,26 @@ const connectToWifi = () => {
 	});
 };
 
-const onSocketMessage = (socket) => (message) => {
+const onSocketMessage = (socket, message) => {
     log("websocket message: " + message);
     parsed = JSON.parse(message);
     if (!message
             || !parsed
             || !parsed.command
-            || parsed.command = 'state') {
+            || parsed.command == 'state') {
         return JSON.stringify(getState());
     }
 };
 
 const onSocketConnection = (socket) => {
     log("socket connection");
-    socket.on("message", onSocketMessage(socket))
+    socket.on("message", (message) => onSocketMessage(socket, message));
 };
 
 const onHttpRequest = (request, response) => {
-	log("Processing request");
+	log("processing http request");
 	response.writeHead(200, { 'Content-Type': 'text/html' });
-	response.end(getTime());
+	response.end(JSON.stringify(getState()));
 };
 
 const startServer = () => {
@@ -170,4 +174,4 @@ function onInit() {
 	connectToWifi();
     attachInterupts();
 }
-
+onInit();
