@@ -26,6 +26,33 @@ pinMode(
   'input_pullup'
 );
 
+/**
+const tachWatcher = E.compiledC(`
+//void handlePulse()
+//int getTach()
+//void handleDirection()
+
+volatile int pulsesFromStart = 0;
+volatile bool isDirectionForward = true;
+
+void handlePulse() {
+    if (isDirectionForward) {
+        pulsesFromStart++;
+    } else {
+        pulsesFromStart--;
+    }
+}
+
+void handleDirection(bool state) {
+  isDirectionForward = !state;
+}
+
+
+int getTach() {
+    return pulsesFromStart;
+}
+`);
+**/
 const tachWatcher = (function(){
   var bin=atob("AUt7RBhocEdGAAAAAkt7RIDwAQAYcHBHNgAAAAdLe0QbeCOxBkp6RBNoATMD4AVKekQTaAE7E2BwRwC/JgAAACIAAAAYAAAAAQ==");
   return {
@@ -35,11 +62,31 @@ const tachWatcher = (function(){
   };
 })();
 
-const getTime = () => {
-  const secondsRaw = tachWatcher.getTach() / 4800.0;
-  const minutes = Math.floor(secondsRaw / 60);
-  const seconds = secondsRaw - minutes * 60.0;
-  return minutes + ":" + seconds;
+class Clock {
+    constructor(tachWatcher, rotationsPerSecond = 4800.0) {
+        this.tachWatcher = tachWatcher;
+        this.rotationsPerSecond = 4800;
+    }
+
+    get seconds() {
+        return this.tachWatcher.getTach() / 4800.0;
+    }
+
+    get time() {
+      const minutes = Math.floor(secondsRaw / 60);
+      const seconds = secondsRaw - minutes * 60.0;
+      return minutes + ":" + seconds;
+    }
+};
+const CLOCK = Clock(tachWatcher);
+
+const getState = () => {
+    return  {
+        clock: {
+            seconds: CLOCK.seconds,
+            time: CLOCK.time
+        }
+    };
 };
 
 
@@ -55,15 +102,18 @@ const attachInterupts = () => {
     PINS.TACH_DIRECTION,
     {repeat:true, edge:"both", irq:true}
   );
+
+  if (DEBUG) {
+    setInterval(
+      () => {
+        log("Tach = " + tachWatcher.getTach());
+        log("Time = " + CLOCK.time);
+      },
+      1000
+    );
+  }
 };
 
-setInterval(
-    () => {
-        log("Tach = " + tachWatcher.getTach());
-        log("Time = " + getTime());
-    },
-    1000
-);
 const connectToWifi = () => {
 	wifi.connect(WIFI_NAME, WIFI_OPTIONS, (err)  => {
 		if (err) {
@@ -86,6 +136,22 @@ const connectToWifi = () => {
 	});
 };
 
+const onSocketMessage = (socket) => (message) => {
+    log("websocket message: " + message);
+    parsed = JSON.parse(message);
+    if (!message
+            || !parsed
+            || !parsed.command
+            || parsed.command = 'state') {
+        return JSON.stringify(getState());
+    }
+};
+
+const onSocketConnection = (socket) => {
+    log("socket connection");
+    socket.on("message", onSocketMessage(socket))
+};
+
 const onHttpRequest = (request, response) => {
 	log("Processing request");
 	response.writeHead(200, { 'Content-Type': 'text/html' });
@@ -97,14 +163,7 @@ const startServer = () => {
 	ws
 		.createServer(onHttpRequest)
 		.listen(80)
-		.on("websocket", (socket) => {
-			log("websocket connection");
-			socket.on("message", (msg) => {
-				log("websocket message: " + msg);
-				socket.send("pong");
-			});
-		});
-
+		.on("websocket", onSocketConnection);
 };
 
 function onInit() {
