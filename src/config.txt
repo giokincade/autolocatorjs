@@ -1,2 +1,0 @@
-aws_key="AKIAIUWH5JLSGD7WX7MA"
-aws_secret="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"
