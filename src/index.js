@@ -98,6 +98,40 @@ class Clock {
 };
 const CLOCK = new Clock(tachWatcher);
 
+class Tally {
+    get pins() {
+        return {
+            "play": PINS.TALLY.PLAY,
+            "stop": PINS.TALLY.STOP,
+            "record": PINS.TALLY.RECORD,
+            "fast_forward": PINS.TALLY.FAST_FORWARD,
+            "rewind": PINS.TALLY.REWIND
+        };
+    }
+
+    get state() {
+        var result = {};
+
+        Object.keys(this.pins).forEach((pinName) => {
+            result[pinName] = this.isLit(pinName);
+        });
+
+        return result;
+    }
+
+    isLit(pinName) {
+        return (digitalRead(this.pins[pinName]) == 0);
+    }
+
+    init() {
+        Object.keys(this.pins).forEach((pinName) => {
+            pinMode(this.pins[pinName], 'input_pullup');
+        });
+    }
+
+}
+const TALLY = new Tally();
+
 class Transport {
     play() {
         this.pulse(PINS.TRANSPORT.PLAY);
@@ -148,7 +182,8 @@ const getState = () => {
             pulses: CLOCK.pulsesFromStart,
             seconds: CLOCK.seconds,
             time: CLOCK.time
-        }
+        },
+        tally: TALLY.state
     };
 };
 
@@ -262,6 +297,7 @@ function onInit() {
     connectToWifi();
     attachInterupts();
     TRANSPORT.init();
+    TALLY.init();
     initialized = true;
 }
 if (!initialized) {
