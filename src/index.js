@@ -5,7 +5,20 @@ const http = require("http");
 const PINS = {
     TACH: A0,
     TACH_DIRECTION: A1,
-    PLAY: A4
+    TRANSPORT: {
+        PLAY: A5,
+        STOP: A6,
+        FAST_FORWARD: A7,
+        REWIND: B1,
+        RECORD: A4
+    },
+    TALLY: {
+        PLAY: B9,
+        STOP: B8,
+        FAST_FORWARD: B7,
+        REWIND: B6,
+        RECORD: B0
+    }
 };
 const WIFI_NAME = "OceanusStudio";
 const WIFI_OPTIONS = { password : "studio125" };
@@ -87,20 +100,47 @@ const CLOCK = new Clock(tachWatcher);
 
 class Transport {
     play() {
+        this.pulse(PINS.TRANSPORT.PLAY);
     }
 
     stop() {
+        this.pulse(PINS.TRANSPORT.STOP);
     }
 
     rewind() {
+        this.pulse(PINS.TRANSPORT.REWIND);
     }
 
-    fastforward() {
+    fastForward() {
+        this.pulse(PINS.TRANSPORT.FAST_FORWARD);
+    }
+
+    pulse(pin) {
+        digitalWrite(pin, false);
+        intervalId = setInterval(
+            () => {
+                digitalWrite(pin, true);
+                clearInterval(intervalId);
+            },
+            50
+        );
     }
 
     init() {
+        const pins = [
+            PINS.TRANSPORT.PLAY,
+            PINS.TRANSPORT.STOP,
+            PINS.TRANSPORT.RECORD,
+            PINS.TRANSPORT.FAST_FORWARD,
+            PINS.TRANSPORT.REWIND
+        ];
+        pins.forEach((pin) => {
+            pinMode(pin, 'output');
+            digitalWrite(pin, true);
+        });
     }
 }
+const TRANSPORT = new Transport();
 
 const getState = () => {
     return  {
@@ -211,6 +251,7 @@ var initialized = false;
 function onInit() {
     connectToWifi();
     attachInterupts();
+    TRANSPORT.init();
     initialized = true;
 }
 if (!initialized) {
