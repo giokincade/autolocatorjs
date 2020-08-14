@@ -219,6 +219,8 @@ const connectToWifi = () => {
 
 const onSocketMessage = (socket, message) => {
     log("websocket message: " + message);
+    socket.send("pong");
+    /**
     parsed = JSON.parse(message);
     if (!message
             || !parsed
@@ -226,11 +228,19 @@ const onSocketMessage = (socket, message) => {
             || parsed.command == 'state') {
         return JSON.stringify(getState());
     }
+    **/
 };
 
 const onSocketConnection = (socket) => {
     log("socket connection");
-    socket.on("message", (message) => onSocketMessage(socket, message));
+    socket.send(JSON.stringify(getState()));
+    socket.on("message", (message) => {
+        log("socket message");
+        log(message);
+    });
+    socket.on("close", () => {
+        log("socket close");
+    });
 };
 
 const onHttpRequest = (request, response) => {
