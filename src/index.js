@@ -260,7 +260,7 @@ const connectToWifi = () => {
 			log("Wifi Connected!");
 
 			var info = {
-					ip: "192.168.0.201",
+					ip: "192.168.0.202",
 					gw: "192.168.0.1",
 					netmask: "255.255.255.0"
 			};
