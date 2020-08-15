@@ -393,6 +393,15 @@ function onInit() {
 	TRANSPORT.init();
 	TALLY.init();
 	initialized = true;
+
+    var  on = false;
+    setInterval(
+        () => {
+          on = !on;
+          LED1.write(on);
+        },
+        500
+    );
 }
 if (!initialized) {
 	onInit();
