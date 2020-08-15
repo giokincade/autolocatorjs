@@ -260,7 +260,7 @@ const connectToWifi = () => {
 			log("Wifi Connected!");
 
 			var info = {
-					ip: "192.168.0.202",
+					ip: "192.168.0.203",
 					gw: "192.168.0.1",
 					netmask: "255.255.255.0"
 			};
@@ -281,7 +281,9 @@ class Server {
 
     broadcastState() {
         this.sockets.forEach((socket) => {
-            socket.send(this.stateResponse);
+            if (socket && socket.connected) {
+                socket.send(this.stateResponse);
+            }
         });
     }
 
@@ -298,7 +300,9 @@ class Server {
         log("onSocketClose");
         index = this.sockets.indexOf(socket);
         if (index > -1) {
-            this.sockets = this.sockets.splice(index, 1);
+            this.sockets.splice(index, 1);
+        } else {
+            log("couldn't find socket");
         }
     }
 
@@ -311,7 +315,7 @@ class Server {
         this.sockets.push(socket);
         socket.send(this.stateResponse);
         socket.on("message", (message) => this.onSocketMessage(socket, message));
-        socket.on("close", () => this.onSocketClose(socket));
+        socket.on("close", (event) => this.onSocketClose(socket));
     }
 
     onHttpRequest(request, response) {
@@ -329,7 +333,7 @@ class Server {
 
         setInterval(
             () => this.broadcastState(),
-            100
+            200
         );
     }
 }
