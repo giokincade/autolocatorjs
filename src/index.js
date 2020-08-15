@@ -275,6 +275,16 @@ const connectToWifi = () => {
 
 //Beware: There are arrow functions everywhere to ensure that the `this` pointer is correct.
 class Server {
+    constructor() {
+        this.sockets = [];
+    }
+
+    broadcastState() {
+        this.sockets.forEach((socket) => {
+            socket.send(this.stateResponse);
+        });
+    }
+
     onSocketMessage(socket, message) {
         log("socket message");
         log(message);
@@ -282,12 +292,14 @@ class Server {
         if (parsed && parsed.command) {
             TRANSPORT.perform(parsed.command);
         }
-
-        socket.send(JSON.stringify(getState()));
     }
 
-    onSocketClose() {
-        log("socket closed");
+    onSocketClose(socket) {
+        log("onSocketClose");
+        index = this.sockets.indexOf(socket);
+        if (index > -1) {
+            this.sockets = this.sockets.splice(index, 1);
+        }
     }
 
     get stateResponse() {
@@ -296,6 +308,7 @@ class Server {
 
     onSocketConnection(socket) {
         log("socket connection");
+        this.sockets.push(socket);
         socket.send(this.stateResponse);
         socket.on("message", (message) => this.onSocketMessage(socket, message));
         socket.on("close", () => this.onSocketClose(socket));
@@ -313,6 +326,11 @@ class Server {
             .createServer((request, response) => this.onHttpRequest(request, response))
             .listen(80)
             .on("websocket", (socket) => this.onSocketConnection(socket));
+
+        setInterval(
+            () => this.broadcastState(),
+            100
+        );
     }
 }
 const SERVER = new Server();
