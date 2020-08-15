@@ -1,0 +1,10 @@
+#! /bin/bash
+set -e
+set -x
+
+curl -i -N \
+    -H "Connection: Upgrade" \
+    -H "Upgrade: websocket" \
+    -H "Host: 192.168.0.201" \
+    -H "Origin: http://192.168.0.201" \
+    http://192.168.0.201

@@ -3,3 +3,4 @@ setInterval(function() {
   on = !on;
   LED1.write(on);
 }, 500);
+console.log("done!");
