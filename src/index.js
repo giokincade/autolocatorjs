@@ -108,7 +108,7 @@ class Clock {
         this.tachWatcher.reset();
 	}
 
-    perform(action) {
+    perform(action, value) {
         if (this[action]) {
             this[action]();
             return true;
@@ -166,8 +166,22 @@ class Transport {
         this.pulse(PINS.TRANSPORT.STOP);
     }
 
-    record() {
-        this.pulse(PINS.TRANSPORT.RECORD);
+    record(value) {
+        if (value) {
+            this.pulse(PINS.TRANSPORT.RECORD);
+        } else {
+            this.play();
+        }
+        /**
+        const pin = PINS.TRANSPORT.RECORD;
+        if (value) {
+            log("record low");
+            digitalWrite(pin, false);
+        } else {
+            log("record hi");
+            digitalWrite(pin, true);
+        }
+        **/
     }
 
     rewind() {
@@ -178,14 +192,17 @@ class Transport {
         this.pulse(PINS.TRANSPORT.FAST_FORWARD);
     }
 
-    perform(action) {
+    perform(action, value) {
+        log("transportPerform");
+        log(action);
+        log(value);
         action = action
             .replace("ff", "fastForward")
             .replace("rec", "record");
 
         if (this[action]) {
             log("performing action");
-            this[action]();
+            this[action](value);
             return true;
         } else {
             log("couldn't find action");
@@ -194,6 +211,8 @@ class Transport {
     }
 
     pulse(pin) {
+        log("pulsing");
+        log(pin);
         digitalWrite(pin, false);
         intervalId = setInterval(
             () => {
@@ -315,8 +334,8 @@ class Server {
         log(message);
         parsed = JSON.parse(message);
         if (parsed && parsed.command) {
-            if (!TRANSPORT.perform(parsed.command)) {
-                CLOCK.perform(parsed.command);
+            if (!TRANSPORT.perform(parsed.command, parsed.value)) {
+                CLOCK.perform(parsed.command, parsed.value);
             }
         }
     }
@@ -325,6 +344,7 @@ class Server {
         log("onSocketClose");
         index = this.sockets.indexOf(socket);
         if (index > -1) {
+            log("found socket");
             this.sockets.splice(index, 1);
         } else {
             log("couldn't find socket");
@@ -337,7 +357,8 @@ class Server {
 
     onSocketConnection(socket) {
         log("socket connection");
-        this.sockets.push(socket);
+        //We're throwing out all the old sockets because Matt hates life.
+        this.sockets = [socket];
         socket.send(this.stateResponse);
         socket.on("message", (message) => this.onSocketMessage(socket, message));
         socket.on("close", (event) => this.onSocketClose(socket));
