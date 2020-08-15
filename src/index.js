@@ -45,6 +45,7 @@ const tachWatcher = E.compiledC(`
 //void handlePulse()
 //int getTach()
 //void handleDirection()
+//void reset()
 
 volatile int pulsesFromStart = 0;
 volatile bool isDirectionForward = true;
@@ -64,6 +65,10 @@ void handleDirection(bool state) {
 
 int getTach() {
 	return pulsesFromStart;
+}
+
+void reset() {
+	pulsesFromStart = 0;
 }
 `);
 **/
@@ -297,7 +302,7 @@ const onSocketMessage = (socket, message) => {
 		case "set-locate-point":
 			//locate point function here
 			break;
-		case "reset-locate-points"
+		case "reset-locate-points":
 			//reset locate points
 			break;
 		case "locate":
