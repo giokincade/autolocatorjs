@@ -1,2 +1,0 @@
-aws_key=AKIAJQLJDMBYWUVCKKYA
-aws_secret=AWSSecretKe=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
