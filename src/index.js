@@ -156,6 +156,10 @@ class Transport {
         this.pulse(PINS.TRANSPORT.STOP);
     }
 
+    record() {
+        this.pulse(PINS.TRANSPORT.RECORD);
+    }
+
     rewind() {
         this.pulse(PINS.TRANSPORT.REWIND);
     }
@@ -165,8 +169,15 @@ class Transport {
     }
 
     perform(action) {
-        if (this.hasOwnProperty(action)) {
+        action = action
+            .replace("ff", "fastForward")
+            .replace("rec", "record");
+
+        if (this[action]) {
+            log("performing action");
             this[action]();
+        } else {
+            log("couldn't find action");
         }
     }
 
@@ -333,7 +344,7 @@ class Server {
 
         setInterval(
             () => this.broadcastState(),
-            200
+            50
         );
     }
 }
