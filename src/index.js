@@ -72,12 +72,14 @@ void reset() {
 }
 `);
 **/
+// Code saved with E.setBootCode
 const tachWatcher = (function(){
-  var bin=atob("AUt7RBhocEdGAAAAAkt7RIDwAQAYcHBHNgAAAAdLe0QbeCOxBkp6RBNoATMD4AVKekQTaAE7E2BwRwC/JgAAACIAAAAYAAAAAQ==");
+  var bin=atob("Akt7RAAiGmBwRwC/VgAAAAFLe0QYaHBHRgAAAAJLe0SA8AEAGHBwRzYAAAAHS3tEG3gjsQZKekQTaAEzA+AFSnpEE2gBOxNgcEcAvyYAAAAiAAAAGAAAAAE=");
   return {
-	handlePulse:E.nativeCall(29, "void()", bin),
-	getTach:E.nativeCall(1, "int()", bin),
-	handleDirection:E.nativeCall(13, "void()", bin),
+    handlePulse:E.nativeCall(45, "void()", bin),
+    getTach:E.nativeCall(17, "int()", bin),
+    handleDirection:E.nativeCall(29, "void()", bin),
+    reset:E.nativeCall(1, "void()", bin),
   };
 })();
 
@@ -101,11 +103,19 @@ class Clock {
 	  return minutes + ":" + seconds;
 	}
 
-	reset()
-	{
-		log("RESET here.....\n\n");
-		//we have to recompile the C i believe to reset the pulsesFromStart number in tachWatcher
+	reset() {
+        log("reset");
+        this.tachWatcher.reset();
 	}
+
+    perform(action) {
+        if (this[action]) {
+            this[action]();
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 
 const CLOCK = new Clock(tachWatcher);
@@ -176,8 +186,10 @@ class Transport {
         if (this[action]) {
             log("performing action");
             this[action]();
+            return true;
         } else {
             log("couldn't find action");
+            return false;
         }
     }
 
@@ -303,7 +315,9 @@ class Server {
         log(message);
         parsed = JSON.parse(message);
         if (parsed && parsed.command) {
-            TRANSPORT.perform(parsed.command);
+            if (!TRANSPORT.perform(parsed.command)) {
+                CLOCK.perform(parsed.command);
+            }
         }
     }
 
