@@ -111,80 +111,89 @@ class Clock {
 const CLOCK = new Clock(tachWatcher);
 
 class Tally {
-	get pins() {
-		return {
-			"play": PINS.TALLY.PLAY,
-			"stop": PINS.TALLY.STOP,
-			"record": PINS.TALLY.RECORD,
-			"fast_forward": PINS.TALLY.FAST_FORWARD,
-			"rewind": PINS.TALLY.REWIND
-		};
-	}
+    get pins() {
+        return {
+            "play": PINS.TALLY.PLAY,
+            "stop": PINS.TALLY.STOP,
+            "record": PINS.TALLY.RECORD,
+            "fast_forward": PINS.TALLY.FAST_FORWARD,
+            "rewind": PINS.TALLY.REWIND
+        };
+    }
 
-	get state() {
-		var result = {};
+    get state() {
+        var result = {};
 
-		Object.keys(this.pins).forEach((pinName) => {
-			result[pinName] = this.isLit(pinName);
-		});
+        Object.keys(this.pins).forEach((pinName) => {
+            result[pinName] = this.isLit(pinName);
+        });
 
-		return result;
-	}
+        return result;
+    }
 
-	isLit(pinName) {
-		return (digitalRead(this.pins[pinName]) == 0);
-	}
+    isLit(pinName) {
+        if (digitalRead(this.pins[pinName]) == 0) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
 
-	init() {
-		Object.keys(this.pins).forEach((pinName) => {
-			pinMode(this.pins[pinName], 'input_pullup');
-		});
-	}
-
+    init() {
+        Object.keys(this.pins).forEach((pinName) => {
+            pinMode(this.pins[pinName], 'input_pullup');
+        });
+    }
 }
 const TALLY = new Tally();
 
 class Transport {
-	play() {
-		this.pulse(PINS.TRANSPORT.PLAY);
-	}
+    play() {
+        this.pulse(PINS.TRANSPORT.PLAY);
+    }
 
-	stop() {
-		this.pulse(PINS.TRANSPORT.STOP);
-	}
+    stop() {
+        this.pulse(PINS.TRANSPORT.STOP);
+    }
 
-	rewind() {
-		this.pulse(PINS.TRANSPORT.REWIND);
-	}
+    rewind() {
+        this.pulse(PINS.TRANSPORT.REWIND);
+    }
 
-	fastForward() {
-		this.pulse(PINS.TRANSPORT.FAST_FORWARD);
-	}
+    fastForward() {
+        this.pulse(PINS.TRANSPORT.FAST_FORWARD);
+    }
 
-	pulse(pin) {
-		digitalWrite(pin, false);
-		intervalId = setInterval(
-			() => {
-				digitalWrite(pin, true);
-				clearInterval(intervalId);
-			},
-			50
-		);
-	}
+    perform(action) {
+        if (this.hasOwnProperty(action)) {
+            this[action]();
+        }
+    }
 
-	init() {
-		const pins = [
-			PINS.TRANSPORT.PLAY,
-			PINS.TRANSPORT.STOP,
-			PINS.TRANSPORT.RECORD,
-			PINS.TRANSPORT.FAST_FORWARD,
-			PINS.TRANSPORT.REWIND
-		];
-		pins.forEach((pin) => {
-			pinMode(pin, 'output');
-			digitalWrite(pin, true);
-		});
-	}
+    pulse(pin) {
+        digitalWrite(pin, false);
+        intervalId = setInterval(
+            () => {
+                digitalWrite(pin, true);
+                clearInterval(intervalId);
+            },
+            50
+        );
+    }
+
+    init() {
+        const pins = [
+            PINS.TRANSPORT.PLAY,
+            PINS.TRANSPORT.STOP,
+            PINS.TRANSPORT.RECORD,
+            PINS.TRANSPORT.FAST_FORWARD,
+            PINS.TRANSPORT.REWIND
+        ];
+        pins.forEach((pin) => {
+            pinMode(pin, 'output');
+            digitalWrite(pin, true);
+        });
+    }
 }
 const TRANSPORT = new Transport();
 
@@ -258,88 +267,55 @@ const connectToWifi = () => {
 
 			wifi.setIP(info, (err) => {
 					log("IP set!");
-					startServer();
+					SERVER.init();
 			});
 		}
 	});
 };
 
-const onSocketMessage = (socket, message) => {
-	log("websocket message: " + message);
-	socket.send("pong");
+//Beware: There are arrow functions everywhere to ensure that the `this` pointer is correct.
+class Server {
+    onSocketMessage(socket, message) {
+        log("socket message");
+        log(message);
+        parsed = JSON.parse(message);
+        if (parsed && parsed.command) {
+            TRANSPORT.perform(parsed.command);
+        }
 
-	parsed = JSON.parse(message);
+        socket.send(JSON.stringify(getState()));
+    }
 
+    onSocketClose() {
+        log("socket closed");
+    }
 
-	if (!message
-			|| !parsed
-			|| !parsed.command
-			|| parsed.command == 'state') 
-	{
-		return JSON.stringify(getState());
-	}
+    get stateResponse() {
+        return JSON.stringify(getState());
+    }
 
-	switch(parsed.command) 
-	{
-		case "play":
-			TRANSPORT.play();
-			break;
-		case "record":
-			TRANSPORT.record();
-			break;
-		case "stop":
-			TRANSPORT.stop();
-			break;
-		case "rewind":
-			TRANSPORT.rewind();
-			break;
-		case "fast-forward":
-			TRANSPORT.fastForward();
-			break;
-		case "reset-counter":
-			CLOCK.reset();
-			break;
-		case "set-locate-point":
-			//locate point function here
-			break;
-		case "reset-locate-points":
-			//reset locate points
-			break;
-		case "locate":
-			//locate to a point
-			break;
-	  	default:
-			break;
-	}
+    onSocketConnection(socket) {
+        log("socket connection");
+        socket.send(this.stateResponse);
+        socket.on("message", (message) => this.onSocketMessage(socket, message));
+        socket.on("close", () => this.onSocketClose(socket));
+    }
 
-	return JSON.stringify(getState());
-};
+    onHttpRequest(request, response) {
+        log("onHttpRequest");
+        response.writeHead(200, { 'Content-Type': 'text/html' });
+        response.end(INDEX);
+    }
 
-const onSocketConnection = (socket) => {
-	log("socket connection");
-	socket.send(JSON.stringify(getState()));
-	socket.on("message", (message) => {
-		log("socket message");
-		log(message);
-	});
-	socket.on("close", () => {
-		log("socket close");
-	});
-};
-
-const onHttpRequest = (request, response) => {
-	log("processing http request");
-	response.writeHead(200, { 'Content-Type': 'text/html' });
-	response.end(INDEX);
-};
-
-const startServer = () => {
-	log("Starting Server");
-	ws
-		.createServer(onHttpRequest)
-		.listen(80)
-		.on("websocket", onSocketConnection);
-};
+    init() {
+        log("Server.init");
+        ws
+            .createServer((request, response) => this.onHttpRequest(request, response))
+            .listen(80)
+            .on("websocket", (socket) => this.onSocketConnection(socket));
+    }
+}
+const SERVER = new Server();
 
 var initialized = false;
 
