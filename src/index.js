@@ -20,12 +20,31 @@ const PINS = {
     RECORD: B0,
   },
 };
-const WIFI_NAME = "OceanusStudio";
-const WIFI_OPTIONS = { password: "studio125" };
-const DEBUG = true;
+
+const MATT_CONFIG = {
+    "debug": true,
+    "wifi":  {
+      name:  "OceanusStudio",
+      password: "studio125"
+    },
+    "network": {
+        ip: "192.168.0.203",
+        gw: "192.168.0.1",
+        netmask: "255.255.255.0",
+    }
+};
+
+const GIO_CONFIG = {
+  "debug": true,
+  "wifi":  {
+    name:  "network_name",
+    password: "pw"
+  }
+};
+const CONFIG = MATT_CONFIG;
 
 const log = (msg) => {
-  if (DEBUG) {
+  if (CONFIG.debug) {
     console.log(msg);
   }
 };
@@ -116,8 +135,26 @@ class Clock {
       return false;
     }
   }
-}
 
+  init() {
+    log("Clock.init");
+    //TODO update these to point to this.tachWatcher
+    setWatch(tachWatcher.handlePulse, PINS.TACH, {
+      repeat: true,
+      edge: "rising",
+      irq: true,
+    });
+
+    //TODO update these to point to this.tachWatcher
+    setWatch(tachWatcher.handleDirection, PINS.TACH_DIRECTION, {
+      repeat: true,
+      edge: "both",
+      irq: true,
+    });
+
+    return Promise.resolve();
+  }
+}
 const CLOCK = new Clock(tachWatcher);
 
 class Tally {
@@ -150,9 +187,12 @@ class Tally {
   }
 
   init() {
+    log("Tally.init");
     Object.keys(this.pins).forEach((pinName) => {
       pinMode(this.pins[pinName], "input_pullup");
     });
+
+    return Promise.resolve();
   }
 }
 const TALLY = new Tally();
@@ -241,6 +281,7 @@ class Transport {
   }
 
   init() {
+    log("Transport.init");
     const pins = [
       PINS.TRANSPORT.PLAY,
       PINS.TRANSPORT.STOP,
@@ -252,6 +293,8 @@ class Transport {
       pinMode(pin, "output");
       digitalWrite(pin, true);
     });
+
+    return Promise.resolve();
   }
 }
 
@@ -350,35 +393,8 @@ class Locate {
 
 const LOCATE = new Locate();
 
-const getState = () => {
-  return {
-    clock: {
-      pulses: CLOCK.pulsesFromStart,
-      seconds: CLOCK.seconds,
-      time: CLOCK.time,
-    },
-    tally: TALLY.state,
-  };
-};
-
 const attachInterupts = () => {
-  setWatch(tachWatcher.handlePulse, PINS.TACH, {
-    repeat: true,
-    edge: "rising",
-    irq: true,
-  });
 
-  setWatch(tachWatcher.handleDirection, PINS.TACH_DIRECTION, {
-    repeat: true,
-    edge: "both",
-    irq: true,
-  });
-
-  if (DEBUG) {
-    setInterval(() => {
-      log("STATE = " + JSON.stringify(getState()));
-    }, 10000);
-  }
 };
 
 const INDEX = `
@@ -399,27 +415,44 @@ const INDEX = `
 </html>
 `;
 
-const connectToWifi = () => {
-  wifi.connect(WIFI_NAME, WIFI_OPTIONS, (err) => {
-    if (err) {
-      log("Connection error: " + err);
-      return;
-    } else {
-      log("Wifi Connected!");
+class Network {
+  init() {
+    return new Promise((resolve, reject) => {
+      wifi.connect(CONFIG.wifi.name, CONFIG.wifi, (err) => {
+        if (err) {
+          log("Connection error: " + err);
+          reject();
+        } else {
+          log("Wifi Connected!");
 
-      var info = {
-        ip: "192.168.0.203",
-        gw: "192.168.0.1",
-        netmask: "255.255.255.0",
-      };
-
-      wifi.setIP(info, (err) => {
-        log("IP set!");
-        SERVER.init();
+          if (CONFIG.network) {
+              wifi.setIP(CONFIG.network, (err) => {
+                if (err) {
+                  log("IP Setting Error " + err);
+                  reject();
+                } else {
+                  log("IP set!");
+                  log(CONFIG.network);
+                  resolve();
+                }
+              });
+          } else {
+              wifi.getIP((err, ipinfo) => {
+                if (err) {
+                  log("getIP Error: " + err);
+                  reject();
+                } else {
+                  log(ipinfo);
+                  resolve();
+                }
+              });
+          }
+        }
       });
-    }
-  });
-};
+    })
+  }
+}
+const NETWORK = new Network();
 
 //Beware: There are arrow functions everywhere to ensure that the `this` pointer is correct.
 class Server {
@@ -459,8 +492,20 @@ class Server {
     }
   }
 
+  get state() {
+    return {
+      clock: {
+        pulses: CLOCK.pulsesFromStart,
+        seconds: CLOCK.seconds,
+        time: CLOCK.time,
+      },
+      tally: TALLY.state,
+    };
+  }
+
+
   get stateResponse() {
-    return JSON.stringify(getState());
+    return JSON.stringify(this.state);
   }
 
   onSocketConnection(socket) {
@@ -488,28 +533,46 @@ class Server {
       .on("websocket", (socket) => this.onSocketConnection(socket));
 
     setInterval(() => this.broadcastState(), 50);
+    const self = this;
+    if (CONFIG.debug) {
+      setInterval(() => {
+        log("STATE = " + self.stateResponse);
+      }, 10000);
+    }
   }
 }
 const SERVER = new Server();
 
+
+class StatusIndicator {
+  good() {
+    LED2.write(true);
+  }
+
+  bad() {
+    var on = false;
+    setInterval(() => {
+      on = !on;
+      LED1.write(on);
+    }, 500);
+  }
+}
+const STATUS = new StatusIndicator();
+
 var initialized = false;
-
 function onInit() {
-  connectToWifi();
-  attachInterupts();
-  TRANSPORT.init();
-  TALLY.init();
-  initialized = true;
-
-  var on = false;
-  setInterval(() => {
-    on = !on;
-    LED1.write(on);
-  }, 500);
-}
-if (!initialized) {
-  onInit();
+  if (!initialized) {
+    initialized = true;
+    NETWORK.init()
+      .then(() => CLOCK.init())
+      .then(() => TRANSPORT.init())
+      .then(() => TALLY.init())
+      .then(() => SERVER.init())
+      .then(() => STATUS.good())
+      .catch(() => STATUS.bad());
+  }
 }
 
-//LOCATE.toTime(100)
-//LOCATE.toTime(500)
+if (onInit) {
+  onInit()
+}

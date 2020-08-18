@@ -5,4 +5,4 @@ source script/env
 
 echo $BOARD_PORT
 
-espruino --port $BOARD_PORT --board board.json --watch src/index.js
+npx espruino --port $BOARD_PORT --board board.json --watch src/index.js
