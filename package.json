@@ -1,0 +1,24 @@
+{
+  "name": "autolocatorjs",
+  "version": "1.0.0",
+  "description": "An web-based, autolocating remote-control for analog tape machines built on the Espruino",
+  "main": "index.js",
+  "dependencies": {
+    "espruino": "git+https://github.com/giokincade/EspruinoTools.git",
+    "prettier": "^2.0.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/giokincade/autolocatorjs.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/giokincade/autolocatorjs/issues"
+  },
+  "homepage": "https://github.com/giokincade/autolocatorjs#readme"
+}
