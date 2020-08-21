@@ -1,0 +1,8 @@
+#! /bin/bash
+set -x
+set -e
+source script/env
+
+echo $BOARD_PORT
+
+npx espruino --port $BOARD_PORT --board board.json --watch src/index.js

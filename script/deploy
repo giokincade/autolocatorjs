@@ -5,4 +5,14 @@ source script/env
 
 echo $BOARD_PORT
 
-npx espruino --port $BOARD_PORT --board board.json --watch src/index.js
+JSON='{"foo": 5}'
+echo $JSON
+COMMAND="require(\"Storage\").write(\"config.json\", JSON.stringify($JSON));"
+echo $COMMAND
+#npx espruino -e "$COMMAND" --port $BOARD_PORT --board board.json
+#npx espruino --port $BOARD_PORT --board board.json --watch src/index.js
+
+
+# These work
+#npx espruino -e 'require("Storage").write("config.json", JSON.stringify({"foo":3}));' --port /dev/tty.usbmodem00000000001A1 --board board.json
+npx espruino -e 'console.log(require("Storage").read("config.json"));' --port /dev/tty.usbmodem00000000001A1 --board board.json
