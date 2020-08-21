@@ -243,6 +243,7 @@ class Transport {
 
   rewind() {
     log(" << rewind");
+    //digitalWrite(pin, false);
     this.pulse(PINS.TRANSPORT.REWIND);
   }
 
@@ -301,6 +302,55 @@ class Transport {
 const TRANSPORT = new Transport();
 
 class Locate {
+	/*
+	doToggle(dutyCycle, toggleInterval)
+	{
+		this.dutyCycle = dutyCycle;
+		this.toggleInterval = toggleInterval;
+
+		var forward = true;
+
+		if(dutyCycle < .5)
+		{
+			forward = false;
+		}
+		
+      this.toggleSet(forward);
+
+      setInterval(() => this.toggleSet(forward), this.toggleInterval);
+
+	}
+
+	toggleSet(forward)
+	{
+      var timestamp = new Date() / 1000;
+      
+		if(forward)
+		{
+			log(timestamp + " :: FF !!! ");
+			digitalWrite(PINS.TRANSPORT.REWIND, true);
+			digitalWrite(PINS.TRANSPORT.FAST_FORWARD, false); //remember low (false) is on 
+			//TRANSPORT.fastForward();
+		} else {
+			log(timestamp + " :: REWIND !!! ");
+			digitalWrite(PINS.TRANSPORT.REWIND, false);
+			digitalWrite(PINS.TRANSPORT.FAST_FORWARD, true);
+			//TRANSPORT.rewind();
+		} 
+      
+		if(forward)
+		{
+			var timeToReverse = this.toggleInterval*(this.dutyCycle);
+
+			setTimeout(() => {
+				this.toggleSet(!forward);
+			}, timeToReverse);
+		} 
+	}
+
+	//LOCATE.doToggle(.6, 5000)
+	*/
+
   toTime(time) {
     log("STOP LOCATING: " + stopLocating);
     log("IS LOCATING: " + isLocating);
@@ -319,6 +369,15 @@ class Locate {
     log("COUNTER: " + counter);
 
     var diff = Math.abs(time - counter);
+
+    //bullshit hack for now dont ask
+    if(time > counter)
+    {
+    	diff = diff - .5;
+    } else {
+    	diff = diff + .5;
+    }
+
     var speed = Math.abs(
       (lastLocatorTime - counter) / (locatorInterval / 1000)
     );
@@ -329,6 +388,8 @@ class Locate {
     if (diff < 1) {
       isLocating = 0;
       TRANSPORT.stop();
+      stopLocating = 0;
+      isLocating = 0;
       return;
     }
 
