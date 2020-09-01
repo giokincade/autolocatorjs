@@ -1,18 +1,48 @@
 #! /bin/bash
-set -x
 set -e
 source script/env
 
-echo $BOARD_PORT
+DEPLOY_SCRIPT=$0
+CONFIG_FILE="config/default.json"
+COMMAND="deploy"
 
-JSON='{"foo": 5}'
-echo $JSON
-COMMAND="require(\"Storage\").write(\"config.json\", JSON.stringify($JSON));"
-echo $COMMAND
-#npx espruino -e "$COMMAND" --port $BOARD_PORT --board board.json
-#npx espruino --port $BOARD_PORT --board board.json --watch src/index.js
+while (( "$#" )); do
+  case "$1" in
+    -c|--config)
+      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+        CONFIG_FILE=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing">&2
+        exit 1
+      fi
+      ;;
+    -h|--help)
+      echo "Usage: $DEPLOY_SCRIPT [options] [deploy|print_config]"
+      echo "     -c,--config   The config file to use."
+      exit 0
+      ;;
+    -*|--*=) # unsupported flags
+      echo "Error: Unsupported flag $1" >&2
+      exit 1
+      ;;
+    *) # Otherwise grab the command, which is the only positional argument.
+      COMMAND=$1
+      shift
+      ;;
+  esac
+done
 
 
-# These work
-#npx espruino -e 'require("Storage").write("config.json", JSON.stringify({"foo":3}));' --port /dev/tty.usbmodem00000000001A1 --board board.json
-npx espruino -e 'console.log(require("Storage").read("config.json"));' --port /dev/tty.usbmodem00000000001A1 --board board.json
+set -x
+if [[ -n "$CONFIG_FILE" ]] && [[ -f "$CONFIG_FILE" ]]; then
+    JSON=$(cat config/matt.json | jq -c .)
+    ESPRUINO_COMMAND="require(\"Storage\").write(\"config.json\", JSON.stringify($JSON));"
+    npx espruino -e "$ESPRUINO_COMMAND" --port $BOARD_PORT --board board.json
+fi
+
+if [[ $COMMAND == print_config ]]; then
+    npx espruino -e 'console.log(require("Storage").read("config.json"));' --port /dev/tty.usbmodem00000000001A1 --board board.json
+else
+    npx espruino --port $BOARD_PORT --board board.json --watch src/index.js
+fi
